@@ -11,19 +11,22 @@ print database_path
 with open("{}/database/users.json".format(database_path), "r") as f:
     usr = json.load(f)
 
+
 @app.route("/", methods=['GET'])
 def hello():
     ''' Greet the user '''
 
     return "Hey! The service is up, how about doing something useful"
 
+
 @app.route('/users', methods=['GET'])
 def users():
     ''' Returns the list of users '''
 
     resp = make_response(json.dumps(usr, sort_keys=True, indent=4))
-    resp.headers['Content-Type']="application/json"
+    resp.headers['Content-Type'] = "application/json"
     return resp
+
 
 @app.route('/users/<username>', methods=['GET'])
 def user_data(username):
@@ -34,15 +37,22 @@ def user_data(username):
 
     return jsonify(usr[username])
 
+
 @app.route('/users/<username>/lists', methods=['GET'])
 def user_lists(username):
     ''' Get lists based on username '''
 
     try:
-        req = requests.get("http://127.0.0.1:5001/lists/{}".format(username))
-    except requests.exceptions.ConnectionError:
-        return "Service unavailable"
+        proxies = {
+            'http': 'http://127.0.0.1:8500/',
+        }
+
+        req = requests.get(
+            "http://127.0.0.1:5001/lists/{}".format(username), proxies=proxies)
+    except requests.exceptions.ConnectionError as ex:
+        return str(ex.message)
     return req.text
+
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
